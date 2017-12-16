@@ -1,8 +1,16 @@
 FROM postgres:10-alpine
 LABEL maintainer="Johannes Schickling <schickling.j@gmail.com>"
-
-ADD install.sh install.sh
-RUN sh install.sh && rm install.sh
+USER root
+RUN set -e && \
+    apk update && \
+    apk add python py2-pip && \
+    pip install awscli && \
+    apk del py2-pip && \
+    apk add curl && \
+    curl -L --insecure https://github.com/odise/go-cron/releases/download/v0.0.6/go-cron-linux.gz | zcat > /usr/local/bin/go-cron && \
+    chmod u+x /usr/local/bin/go-cron && \
+    apk del curl && \
+    rm -rf /var/cache/apk/*
 
 ENV POSTGRES_DATABASE **None**
 ENV POSTGRES_HOST **None**
@@ -18,8 +26,11 @@ ENV S3_PATH 'backup'
 ENV S3_ENDPOINT **None**
 ENV S3_S3V4 no
 ENV SCHEDULE **None**
+ENV RESTORE_S3_PATH **None**
+ENV DROP_PUBLIC 'no'
 
 ADD run.sh run.sh
 ADD backup.sh backup.sh
+ADD restore.sh restore.sh
 
 CMD ["sh", "run.sh"]

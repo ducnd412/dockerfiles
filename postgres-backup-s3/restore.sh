@@ -43,27 +43,40 @@ if [ "${POSTGRES_PASSWORD}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${S3_ENDPOINT}" == "**None**" ]; then
-  AWS_ARGS=""
-else
-  AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
-fi
-
 # env vars needed for aws tools
 export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION=$S3_REGION
 
 export PGPASSWORD=$POSTGRES_PASSWORD
-POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
+POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER"
 
-echo "Creating dump of ${POSTGRES_DATABASE} database from ${POSTGRES_HOST}..."
+echo "Finding latest backup: "
+echo $(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 10 | awk '{ printf("[ %s ]", $4)}')
+if [ ! -z "$1" ] ;then
+    RESTORE_S3_PATH=$1
+    echo "Select RESTORE_S3_PATH from param: $RESTORE_S3_PATH"
+    else if [ "${RESTORE_S3_PATH}" = "**None**" ]; then
+        RESTORE_S3_PATH=$(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 1 | awk '{ print $4 }')
+        echo "Select RESTORE_S3_PATH from environment: $RESTORE_S3_PATH"
 
-pg_dump $POSTGRES_HOST_OPTS $POSTGRES_DATABASE | gzip > dump.sql.gz
+    fi
+fi
 
-echo "Uploading dump to $S3_BUCKET"
-NOW=$(date +"%Y-%m-%dT%H:%M:%SZ")
-AWS_URL="s3://$S3_BUCKET/$S3_PREFIX/${POSTGRES_DATABASE}_$NOW.sql.gz"
-cat dump.sql.gz | aws $AWS_ARGS s3 cp - $AWS_URL || exit 2
+S3_PATH=s3://$S3_BUCKET/$S3_PREFIX/${RESTORE_S3_PATH}
+echo "Fetching ${S3_PATH} from S3"
 
-echo "SQL backup uploaded successfully: $AWS_URL"
+aws s3 cp $S3_PATH dump.sql.gz
+gzip -d dump.sql.gz
+
+if [ "${DROP_PUBLIC}" == "yes" ]; then
+	echo "Recreating the public schema"
+	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema public cascade; create schema public;"
+fi
+
+echo "Restoring ${S3_PATH}"
+
+psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE < dump.sql
+
+echo "Restore complete"
+
