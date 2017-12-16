@@ -58,7 +58,7 @@ if [ ! -z "$1" ] ;then
     echo "Select RESTORE_S3_PATH from param: $RESTORE_S3_PATH"
     else if [ "${RESTORE_S3_PATH}" = "**None**" ]; then
         RESTORE_S3_PATH=$(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 1 | awk '{ print $4 }')
-        echo "Select RESTORE_S3_PATH from environment: $RESTORE_S3_PATH"
+        echo "Select RESTORE_S3_PATH from latest backup: $RESTORE_S3_PATH"
 
     fi
 fi

@@ -25,7 +25,7 @@ ENV S3_REGION us-west-1
 ENV S3_ENDPOINT **None**
 ENV S3_S3V4 no
 ENV S3_PREFIX 'backup'
-ENV MULTI_FILES no
+ENV RESTORE_S3_PATH **None**
 ENV SCHEDULE **None**
 
 ADD run.sh run.sh

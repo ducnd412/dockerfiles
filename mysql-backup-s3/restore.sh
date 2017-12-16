@@ -40,7 +40,6 @@ fi
 MYSQL_HOST_OPTS="-h $MYSQL_HOST -P $MYSQL_PORT -u$MYSQL_USER"
 if [ -n "${MYSQL_PASSWORD}" ]; then
   MYSQL_HOST_OPTS="$MYSQL_HOST_OPTS -p$MYSQL_PASSWORD"
-  echo "OPTS $MYSQL_HOST_OPTS"
 fi
 
 echo "Finding latest backup: "
@@ -50,7 +49,7 @@ if [ ! -z "$1" ] ;then
     echo "Select RESTORE_S3_PATH from param: $RESTORE_S3_PATH"
     else if [ "${RESTORE_S3_PATH}" = "**None**" ]; then
         RESTORE_S3_PATH=$(aws s3 ls s3://$S3_BUCKET/$S3_PREFIX/ | sort | tail -n 1 | awk '{ print $4 }')
-        echo "Select RESTORE_S3_PATH from environment: $RESTORE_S3_PATH"
+        echo "Select RESTORE_S3_PATH from latest backup: $RESTORE_S3_PATH"
 
     fi
 fi
@@ -60,7 +59,6 @@ echo "Fetching ${S3_PATH} from S3"
 
 aws s3 cp $S3_PATH dump.sql.gz
 gzip -d dump.sql.gz
-
 #if [ "${DROP_PUBLIC}" == "yes" ]; then
 #	echo "Recreating the public schema"
 #	psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE -c "drop schema public cascade; create schema public;"

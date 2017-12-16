@@ -25,3 +25,6 @@ $ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET
 
 If you wish to drop the public schema (drop schema public cascade; create schema public) then set the environment variable DROP_PUBLIC=yes. This is useful for situations where you wish to restore a database which currently has data / schemas in it.
 
+
+
+docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=n1lpOlrN+X4U3TyzaXk/sfFEKWDdEZK/ntz1hXUz -e S3_BUCKET=unionbackup -e S3_PREFIX=prod -e POSTGRES_DATABASE=dbname -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_HOST=localhost schickling/postgres-restore-s3
