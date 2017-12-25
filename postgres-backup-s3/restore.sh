@@ -67,6 +67,7 @@ S3_PATH=s3://$S3_BUCKET/$S3_PREFIX/${RESTORE_S3_PATH}
 echo "Fetching ${S3_PATH} from S3"
 
 aws s3 cp $S3_PATH dump.sql.gz
+rm -rf dump.sql || true
 gzip -d dump.sql.gz
 
 if [ "${DROP_PUBLIC}" == "yes" ]; then
